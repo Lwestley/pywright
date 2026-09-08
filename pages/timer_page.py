@@ -1,53 +1,75 @@
 # pages/timer_page.py
+import config
 from pages.base_page import BasePage
 
 
 class TimerPage(BasePage):
-    """Page object for the pour-over brew method screen. One page,
-    client-side state switches between brew methods (Kalita 185,
-    V60, Chemex, Aeropress) via arrow navigation.
+    """Page object for the active brewing/timer view, shown after
+    Start Brew is clicked on BrewMethodPage.
     """
 
     def __init__(self, page):
         super().__init__(page)
 
-        # --- Method navigation ---
-        self.next_arrow = page.locator("REPLACE_WITH_CODEGEN")   # right arrow (>)
-        self.prev_arrow = page.locator("REPLACE_WITH_CODEGEN")   # left arrow (<)
-        self.method_label = page.get_by_text("Kalita 185")       # changes per method
+        # --- Timer display ---
+        self.countdown_display = page.get_by_test_id("step-countdown")  # the actual counting number
+        self.current_step_label = page.locator("REPLACE_WITH_CODEGEN")  # e.g. "Bloom", "Pour 1"
 
-        # --- Coffee / ratio / water controls ---
-        self.coffee_minus = page.locator("REPLACE_WITH_CODEGEN")
-        self.coffee_plus = page.locator("REPLACE_WITH_CODEGEN")
-        self.ratio_minus = page.locator("REPLACE_WITH_CODEGEN")
-        self.ratio_plus = page.locator("REPLACE_WITH_CODEGEN")
+        # --- Controls ---
+        self.pause_button = page.get_by_role("button", name="Pause")   # confirm real label
+        self.reset_button = page.get_by_role("button", name="Reset Brew")    # confirm real label
+        self.resume_button = page.get_by_role("button", name="Resume")  # confirm real label
 
-        # --- Brew steps (Bloom, Pour 1-3, Drain) ---
+        # --- Step list (if visible during brewing, e.g. highlighting active step) ---
         self.bloom_step = page.get_by_text("Bloom")
+        self.pour_1_step = page.get_by_text("Pour 1")
+        self.pour_2_step = page.get_by_text("Pour 2")
+        self.pour_3_step = page.get_by_text("Pour 3")
+        self.drain_step = page.get_by_text("Drain")
 
-        # --- Brew action ---
-        self.start_brew_button = page.get_by_role("button", name="Start Brew")
+        self.confirm_timer_started()
 
-    # --- Actions ---
+    # --- Page ready check ---
 
-    def go_to_next_method(self) -> None:
-        assert self.next_arrow.is_visible(), "Next arrow not visible, cannot switch brew method"
-        self.next_arrow.click()
-
-    def go_to_previous_method(self) -> None:
-        assert self.prev_arrow.is_visible(), "Previous arrow not visible, cannot switch brew method"
-        self.prev_arrow.click()
-
-    def get_current_method(self) -> str:
-        return self.method_label.inner_text()
-
-    def start_brew(self) -> None:
-        assert self.start_brew_button.is_visible(), "Start Brew button not visible, cannot start brew"
-        self.start_brew_button.click()
+    def confirm_timer_started(self) -> None:
+        """Landmark check: the countdown display appears once the brew is
+        running. Start Brew can lag, so allow the longer brew-start budget.
+        """
+        self.assert_visible(self.countdown_display, "countdown display", timeout_ms=config.LONG_TIMEOUT_MS)
 
     # --- State checks ---
 
+    def confirm_text_visible(self, text: str) -> None:
+      """Confirm any text is visible on the brew method screen.
+      Pass whatever you want to assert from the test, e.g.
+      brew_page.confirm_text_visible("Coffee").
+      """
+      self.assert_text_visible(text, exact=True)
+
     def is_brewing(self) -> bool:
-        # Adjust once codegen shows what actually changes on click,
-        # e.g. button text/state changing, Bloom step becoming "active"
-        return not self.start_brew_button.is_visible()
+        """True once the timer view is showing and counting."""
+        return self.countdown_display.is_visible()
+
+    def get_current_step(self) -> str:
+        return self.current_step_label.inner_text()
+
+    def confirm_current_step_visible(self, step: str) -> None:
+      """Confirm the current step is visible on the timer page.
+      Pass whatever you want to assert from the test, e.g.
+      timer_page.confirm_current_step_visible("Bloom").
+      """
+      self.assert_text_visible(step)
+
+    # --- Actions ---
+
+    def pause(self) -> None:
+        assert self.pause_button.is_visible(), "Pause button not visible, cannot pause brew"
+        self.pause_button.click()
+
+    def resume(self) -> None:
+        assert self.resume_button.is_visible(), "Resume button not visible, cannot resume brew"
+        self.resume_button.click()
+
+    def reset(self) -> None:
+        assert self.reset_button.is_visible(), "Reset button not visible, cannot reset brew"
+        self.reset_button.click()
