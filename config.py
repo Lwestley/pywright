@@ -20,4 +20,13 @@ SCREENSHOT_DIR = os.getenv("SCREENSHOT_DIR", "test-results/screenshots")
 KALITA_185 = "Kalita 185"
 V60 = "V60"
 CHEMEX = "Chemex"
-AEROPRESS = "Aeropress"
+AEROPRESS = "AeroPress"
+
+# Brew steps shown for each method. They differ - AeroPress is an immersion
+# method (Fill/Steep/Press), not a pour-over, so it has no numbered pours.
+BREW_STEPS = {
+    KALITA_185: ("Bloom", "Pour 1", "Pour 2", "Pour 3", "Drain"),
+    V60:        ("Bloom", "Pour 1", "Pour 2", "Pour 3", "Drain"),
+    CHEMEX:     ("Bloom", "Pour 1", "Pour 2", "Pour 3", "Drain"),
+    AEROPRESS:  ("Bloom", "Fill", "Steep", "Press"),
+}

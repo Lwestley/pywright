@@ -29,18 +29,23 @@ class BasePage:
             ) from exc
         return locator
 
-    def assert_text_visible(self, text: str, timeout_ms: int = config.DEFAULT_TIMEOUT_MS) -> Locator:
+    def assert_text_visible(self, text: str, exact: bool = False,
+                            timeout_ms: int = config.DEFAULT_TIMEOUT_MS) -> Locator:
         """Confirm the given text is visible somewhere on the page, then return
         its locator. Pass the string to look for (e.g. a header like "Kalita 185").
+        exact=True matches the whole trimmed string - use it when the text is a
+        substring of something else on the page (e.g. "Press" in "AeroPress").
         """
-        return self.assert_visible(self.page.get_by_text(text), f"text '{text}'", timeout_ms)
+        return self.assert_visible(
+            self.page.get_by_text(text, exact=exact), f"text '{text}'", timeout_ms
+        )
 
-    def assert_all_text_visible(self, *texts: str, timeout_ms: int = config.DEFAULT_TIMEOUT_MS) -> None:
+    def assert_all_text_visible(self, *texts: str, exact: bool = False, timeout_ms: int = config.DEFAULT_TIMEOUT_MS) -> None:
         """Confirm every given text is visible on the page. Raises on the first
         one that isn't, naming which text failed.
         """
         for text in texts:
-            self.assert_text_visible(text, timeout_ms)
+            self.assert_text_visible(text, exact, timeout_ms)
 
     def assert_has_text(self, locator: Locator, expected: str, description: str = "element", timeout_ms: int = config.DEFAULT_TIMEOUT_MS) -> None:
         """Confirm an element's text equals expected (trimmed). Auto-waits, so

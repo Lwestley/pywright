@@ -7,7 +7,7 @@ from pages.timer_page import TimerPage
 class BrewMethodPage(BasePage):
     """Page object for the brew method selection/setup screen.
     One page, client side state switches between brew methods
-    (Kalita 185, V60, Chemex, Aeropress) via arrow navigation.
+    (Kalita 185, V60, Chemex, AeroPress) via arrow navigation.
     Clicking Start Brew transitions into timer_page.py.
 
     Method naming: a method that is a thin wrapper around one BasePage call is
@@ -16,9 +16,9 @@ class BrewMethodPage(BasePage):
     intent name (go_to_method, confirm_recipe_sections_visible).
     """
 
-    # Elements every brew method screen is expected to show.
+    # Recipe sections every brew method screen shows. Brew steps differ per
+    # method - see config.BREW_STEPS.
     RECIPE_SECTIONS = ("Coffee", "Ratio", "Water")
-    BREW_STEPS = ("Bloom", "Pour 1", "Pour 2", "Pour 3", "Drain")
 
     def __init__(self, page):
         super().__init__(page)
@@ -27,7 +27,7 @@ class BrewMethodPage(BasePage):
         # Naming: clickable elements -> *_button, read-only text -> *_value / *_label
         self.next_arrow_button = page.get_by_role("button", name="Next")   # right arrow (>)
         self.prev_arrow_button = page.locator("REPLACE_WITH_CODEGEN")      # left arrow (<)
-        self.method_label = page.get_by_text("Kalita 185")                 # text changes per method
+        self.method_label = page.get_by_test_id("method-name")             # text changes per method
 
         # --- Recipe controls ---
         self.coffee_minus_button = page.locator("REPLACE_WITH_CODEGEN")
@@ -47,7 +47,7 @@ class BrewMethodPage(BasePage):
         self.kalita_185_label = page.get_by_text("Kalita 185")
         self.v60_label = page.get_by_text("V60")
         self.chemex_label = page.get_by_text("Chemex")
-        self.aeropress_label = page.get_by_text("Aeropress")
+        self.aeropress_label = page.get_by_text("AeroPress")
 
         self.assert_method_label_visible()
 
@@ -58,18 +58,21 @@ class BrewMethodPage(BasePage):
         (Kalita 185 is the default) and settles last, so its visibility means
         the screen has finished rendering.
         """
-        self.assert_visible(self.method_label, "brew method label",
-                            timeout_ms=config.DEFAULT_TIMEOUT_MS)
+        self.assert_visible(self.method_label, "brew method label", timeout_ms=config.DEFAULT_TIMEOUT_MS)
 
     # --- Expected-content checks ---
 
     def confirm_recipe_sections_visible(self) -> None:
         """Confirm the Coffee, Ratio, and Water recipe sections are shown."""
-        self.assert_all_text_visible(*self.RECIPE_SECTIONS)
+        self.assert_all_text_visible(*self.RECIPE_SECTIONS, exact=True)
 
-    def confirm_brew_steps_visible(self) -> None:
-        """Confirm all five brew steps (Bloom, Pour 1-3, Drain) are shown."""
-        self.assert_all_text_visible(*self.BREW_STEPS)
+    def confirm_brew_steps_visible(self, method: str | None = None) -> None:
+        """Confirm every brew step for the given method is shown. Defaults to
+        the method currently displayed. Steps differ per method - AeroPress
+        uses Fill/Steep/Press instead of numbered pours.
+        """
+        method = method or self.get_current_method()
+        self.assert_all_text_visible(*config.BREW_STEPS[method], exact=True)
 
     def is_kalita_185_visible(self) -> bool:
         return self.kalita_185_label.is_visible()
