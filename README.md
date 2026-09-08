@@ -13,10 +13,12 @@ pages/            Page objects (one class per screen)
   base_page.py      Shared navigation, waits, assertions, diagnostics
   brew_method_page.py   Brew method selection + recipe setup
   timer_page.py         Active brewing / countdown view
+api_clients/      API client wrappers (one class per service)
+schemas/          Pydantic response schemas — the API contract
 tests/
   unit/           Fast, browserless tests (Playwright is mocked)
   ui/             End-to-end tests that drive a real browser
-  api/            (placeholder)
+  api/            API-client tests (requests.Session is mocked, no network)
 config.py         Central config: URLs, timeouts, brew method data
 conftest.py       pytest fixtures — the `page` fixture, failure screenshots
 ```
@@ -44,6 +46,9 @@ playwright install chromium      # only needed for the UI tests
 ```bash
 # Unit tests — no browser, ~0.1s
 pytest tests/unit/ -v
+
+# API tests — no network, requests is mocked
+pytest tests/api/ -v
 
 # UI tests — launches Chromium, hits the live site
 pytest tests/ui/
@@ -79,8 +84,9 @@ timestamp.
 ## CI
 
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs `pytest tests/unit/`
-on every pull request and on push to `main`. The `unit` check is required
-before merging to `main`.
+and `pytest tests/api/` on every pull request and on push to `main`. The `unit`
+check is required before merging to `main`. Both are browserless and networkless,
+so they need no `playwright install` and no live site.
 
 The UI tests are not in CI yet — they need `playwright install` and depend on
 the live site.

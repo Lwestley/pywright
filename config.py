@@ -12,6 +12,10 @@ DEFAULT_TIMEOUT_MS = 5000
 BREW_START_TIMEOUT_MS = 10000
 LONG_TIMEOUT_MS = 15000
 
+# --- API ---
+BREWERY_API_URL = os.getenv("BREWERY_API_URL", "https://api.openbrewerydb.org/v1")
+API_TIMEOUT_S = 10
+
 # --- Artifacts ---
 # Where failure screenshots are written (relative to the repo root).
 SCREENSHOT_DIR = os.getenv("SCREENSHOT_DIR", "test-results/screenshots")
