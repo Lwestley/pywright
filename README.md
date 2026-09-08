@@ -2,9 +2,10 @@
 
 [![tests](https://github.com/Lwestley/pywright/actions/workflows/tests.yml/badge.svg)](https://github.com/Lwestley/pywright/actions/workflows/tests.yml)
 
-UI test automation for the Dark Wizard Coffee pour-over web app, built with
-[Playwright](https://playwright.dev/python/) and [pytest](https://docs.pytest.org/)
-using the Page Object Model.
+Test automation for the Dark Wizard Coffee pour-over web app, built with
+[Playwright](https://playwright.dev/python/) and [pytest](https://docs.pytest.org/).
+UI coverage uses the Page Object Model; API coverage uses a thin client wrapper
+per service with [pydantic](https://docs.pydantic.dev/) response schemas.
 
 ## Layout
 
@@ -29,6 +30,20 @@ A method that wraps a single `BasePage` call is named
 `<basepage_method>_<locator>` (e.g. `click_pause_button` wraps
 `self.click(self.pause_button)`). Methods with composite or semantic behavior
 keep an intent name (`go_to_method`, `confirm_recipe_sections_visible`).
+
+### API tests
+
+`api_clients/` holds one client class per service (e.g. `BreweryClient`). The
+client owns URL building, query params, timeouts, and status handling, and takes
+its `requests.Session` as an injected dependency. `schemas/` holds the pydantic
+models the responses are validated against — schemas are strict (`extra="forbid"`),
+so a renamed or added field fails at the boundary.
+
+Tests under `tests/api/` inject a fake session, so they run with no network and
+assert on the client's own logic: the URL it builds, the params it sends, how it
+parses JSON into schema objects, and how it reports a non-2xx response (a typed
+`BreweryAPIError` carrying method, URL, and status). Both the happy path and the
+error path are covered.
 
 ## Setup
 
@@ -70,10 +85,11 @@ If you haven't activated the venv, prefix with `./venv/bin/python -m`:
 
 Override via environment variables (see `config.py` for all values):
 
-| Variable         | Default                        | Purpose                          |
-| ---------------- | ------------------------------ | -------------------------------- |
-| `POUROVER_URL`   | `https://darkwizardcoffee.com` | Base URL under test              |
-| `SCREENSHOT_DIR` | `test-results/screenshots`     | Where failure screenshots go     |
+| Variable          | Default                            | Purpose                          |
+| ----------------- | ---------------------------------- | -------------------------------- |
+| `POUROVER_URL`    | `https://darkwizardcoffee.com`     | Base URL under test              |
+| `SCREENSHOT_DIR`  | `test-results/screenshots`         | Where failure screenshots go     |
+| `BREWERY_API_URL` | `https://api.openbrewerydb.org/v1` | Base URL for the API-client tests |
 
 ## Failure screenshots
 
