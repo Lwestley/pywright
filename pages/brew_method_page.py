@@ -9,23 +9,33 @@ class BrewMethodPage(BasePage):
     One page, client side state switches between brew methods
     (Kalita 185, V60, Chemex, Aeropress) via arrow navigation.
     Clicking Start Brew transitions into timer_page.py.
+
+    Method naming: a method that is a thin wrapper around one BasePage call is
+    named <basepage_method>_<locator>, e.g. click_next_arrow_button wraps
+    self.click(self.next_arrow_button). Composite/semantic methods keep an
+    intent name (go_to_method, confirm_recipe_sections_visible).
     """
+
+    # Elements every brew method screen is expected to show.
+    RECIPE_SECTIONS = ("Coffee", "Ratio", "Water")
+    BREW_STEPS = ("Bloom", "Pour 1", "Pour 2", "Pour 3", "Drain")
 
     def __init__(self, page):
         super().__init__(page)
 
         # --- Method navigation ---
-        self.next_arrow = page.get_by_role("button", name="Next")   # right arrow (>)
-        self.prev_arrow = page.locator("REPLACE_WITH_CODEGEN")   # left arrow (<)
-        self.method_label = page.get_by_text("Kalita 185")       # text changes per method
+        # Naming: clickable elements -> *_button, read-only text -> *_value / *_label
+        self.next_arrow_button = page.get_by_role("button", name="Next")   # right arrow (>)
+        self.prev_arrow_button = page.locator("REPLACE_WITH_CODEGEN")      # left arrow (<)
+        self.method_label = page.get_by_text("Kalita 185")                 # text changes per method
 
         # --- Recipe controls ---
-        self.coffee_minus = page.locator("REPLACE_WITH_CODEGEN")
-        self.coffee_plus = page.locator("REPLACE_WITH_CODEGEN")
-        self.coffee_value = page.locator("REPLACE_WITH_CODEGEN")  # e.g. the "20g" text
-        self.ratio_minus = page.locator("REPLACE_WITH_CODEGEN")
-        self.ratio_plus = page.locator("REPLACE_WITH_CODEGEN")
-        self.ratio_value = page.locator("REPLACE_WITH_CODEGEN")   # e.g. the "1:15" text
+        self.coffee_minus_button = page.locator("REPLACE_WITH_CODEGEN")
+        self.coffee_plus_button = page.locator("REPLACE_WITH_CODEGEN")
+        self.coffee_value = page.locator("REPLACE_WITH_CODEGEN")   # e.g. the "20g" text
+        self.ratio_minus_button = page.locator("REPLACE_WITH_CODEGEN")
+        self.ratio_plus_button = page.locator("REPLACE_WITH_CODEGEN")
+        self.ratio_value = page.locator("REPLACE_WITH_CODEGEN")    # e.g. the "1:15" text
 
         # --- Brew steps (Bloom, Pour 1-3, Drain) ---
         self.bloom_step = page.get_by_text("Bloom")
@@ -39,11 +49,11 @@ class BrewMethodPage(BasePage):
         self.chemex_label = page.get_by_text("Chemex")
         self.aeropress_label = page.get_by_text("Aeropress")
 
-        self.confirm_brew_method_screen_loaded()
+        self.assert_method_label_visible()
 
     # --- Page ready check ---
 
-    def confirm_brew_method_screen_loaded(self) -> None:
+    def assert_method_label_visible(self) -> None:
         """Landmark check: the method label is always present on this screen
         (Kalita 185 is the default) and settles last, so its visibility means
         the screen has finished rendering.
@@ -51,7 +61,16 @@ class BrewMethodPage(BasePage):
         self.assert_visible(self.method_label, "brew method label",
                             timeout_ms=config.DEFAULT_TIMEOUT_MS)
 
-    # --- Brew method visibility checks ---
+    # --- Expected-content checks ---
+
+    def confirm_recipe_sections_visible(self) -> None:
+        """Confirm the Coffee, Ratio, and Water recipe sections are shown."""
+        self.assert_all_text_visible(*self.RECIPE_SECTIONS)
+
+    def confirm_brew_steps_visible(self) -> None:
+        """Confirm all five brew steps (Bloom, Pour 1-3, Drain) are shown."""
+        self.assert_all_text_visible(*self.BREW_STEPS)
+
     def is_kalita_185_visible(self) -> bool:
         return self.kalita_185_label.is_visible()
 
@@ -64,43 +83,35 @@ class BrewMethodPage(BasePage):
     def is_aeropress_visible(self) -> bool:
         return self.aeropress_label.is_visible()
 
-    def confirm_text_visible(self, text: str) -> None:
-      """Confirm any text is visible on the brew method screen.
-      Pass whatever you want to assert from the test, e.g.
-      brew_page.confirm_text_visible("Coffee").
-      """
-      self.assert_text_visible(text, exact=True)
-
     # --- Navigation actions ---
 
-    def go_to_next_method(self) -> None:
-      self.click(self.next_arrow, "next arrow")
+    def click_next_arrow_button(self) -> None:
+        self.click(self.next_arrow_button, "next arrow button")
 
-    def go_to_previous_method(self) -> None:
-        assert self.prev_arrow.is_visible(), "Previous arrow not visible, cannot switch brew method"
-        self.prev_arrow.click()
+    def click_prev_arrow_button(self) -> None:
+        self.click(self.prev_arrow_button, "previous arrow button")
 
     def go_to_method(self, target_method: str) -> None:
         """Clicks the next arrow repeatedly until the target method is showing."""
         while self.get_current_method() != target_method:
-            self.go_to_next_method()
+            self.click_next_arrow_button()
 
     def get_current_method(self) -> str:
         return self.method_label.inner_text()
 
     # --- Recipe adjustment actions ---
 
-    def increase_coffee(self) -> None:
-        self.coffee_plus.click()
+    def click_coffee_plus_button(self) -> None:
+        self.click(self.coffee_plus_button, "coffee + button")
 
-    def decrease_coffee(self) -> None:
-        self.coffee_minus.click()
+    def click_coffee_minus_button(self) -> None:
+        self.click(self.coffee_minus_button, "coffee - button")
 
-    def increase_ratio(self) -> None:
-        self.ratio_plus.click()
+    def click_ratio_plus_button(self) -> None:
+        self.click(self.ratio_plus_button, "ratio + button")
 
-    def decrease_ratio(self) -> None:
-        self.ratio_minus.click()
+    def click_ratio_minus_button(self) -> None:
+        self.click(self.ratio_minus_button, "ratio - button")
 
     def get_coffee_amount(self) -> str:
         return self.coffee_value.inner_text()
@@ -110,9 +121,8 @@ class BrewMethodPage(BasePage):
 
     # --- Transition to brewing ---
 
-    def start_brew(self) -> TimerPage:
+    def click_start_brew_button(self) -> TimerPage:
         """Clicks Start Brew and returns TimerPage, since this
         action transitions the screen into the active brewing view."""
-        assert self.start_brew_button.is_visible(), "Start Brew button not visible, cannot start brew"
-        self.start_brew_button.click()
+        self.click(self.start_brew_button, "start brew button")
         return TimerPage(self.page)

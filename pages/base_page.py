@@ -35,6 +35,25 @@ class BasePage:
         """
         return self.assert_visible(self.page.get_by_text(text), f"text '{text}'", timeout_ms)
 
+    def assert_all_text_visible(self, *texts: str, timeout_ms: int = config.DEFAULT_TIMEOUT_MS) -> None:
+        """Confirm every given text is visible on the page. Raises on the first
+        one that isn't, naming which text failed.
+        """
+        for text in texts:
+            self.assert_text_visible(text, timeout_ms)
+
+    def assert_has_text(self, locator: Locator, expected: str, description: str = "element", timeout_ms: int = config.DEFAULT_TIMEOUT_MS) -> None:
+        """Confirm an element's text equals expected (trimmed). Auto-waits, so
+        it handles a label that updates a beat after the element appears.
+        """
+        try:
+            expect(locator).to_have_text(expected, timeout=timeout_ms)
+        except AssertionError as exc:
+            raise AssertionError(
+                f"{type(self).__name__}: {description} text is not '{expected}' "
+                f"within {timeout_ms}ms (url={self.page.url})"
+            ) from exc
+
     # --- Navigation ---
 
     def goto(self, url: str) -> None:
