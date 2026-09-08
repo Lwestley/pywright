@@ -16,11 +16,11 @@ from api_clients.brewery_client import BreweryAPIError, BreweryClient
 from schemas.brewery import Brewery
 
 SAMPLE_BREWERY = {
-    "id": "madtree-brewing-cincinnati",
-    "name": "MadTree Brewing",
+    "id": "ferment-brewing-hood-river",
+    "name": "Ferment Brewing",
     "brewery_type": "regional",
-    "city": "Cincinnati",
-    "state": "Ohio",
+    "city": "Hood River",
+    "state": "Oregon",
     "country": "United States",
 }
 
@@ -66,14 +66,14 @@ def test_list_breweries_hits_the_right_url_and_parses_the_response(client, sessi
 
     assert len(breweries) == 1
     assert isinstance(breweries[0], Brewery)
-    assert breweries[0].name == "MadTree Brewing"
+    assert breweries[0].name == "Ferment Brewing"
 
 
 def test_list_breweries_only_sends_non_none_filters(client, session):
-    client.list_breweries(by_city="Cincinnati", per_page=5)
+    client.list_breweries(by_city="Hood River", per_page=5)
 
     assert session.get.call_args.kwargs["params"] == {
-        "by_city": "Cincinnati",
+        "by_city": "Hood River",
         "per_page": 5,
     }
 
@@ -87,12 +87,12 @@ def test_list_breweries_sends_no_params_when_unfiltered(client, session):
 def test_get_brewery_builds_the_id_path(client, session):
     session.get.return_value = _response(json_data=SAMPLE_BREWERY)
 
-    brewery = client.get_brewery("madtree-brewing-cincinnati")
+    brewery = client.get_brewery("ferment-brewing-hood-river")  # type: ignore[reportOptionalMemberAccess]
 
     assert session.get.call_args.args[0] == (
-        "https://api.test/v1/breweries/madtree-brewing-cincinnati"
+        "https://api.test/v1/breweries/ferment-brewing-hood-river"
     )
-    assert brewery.id == "madtree-brewing-cincinnati"
+    assert brewery.id == "ferment-brewing-hood-river"
 
 
 # --- Error path: non-2xx ---
